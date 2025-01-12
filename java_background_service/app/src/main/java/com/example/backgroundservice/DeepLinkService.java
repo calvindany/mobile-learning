@@ -76,7 +76,7 @@ public class DeepLinkService extends Service {
     }
 
     private void doBackgroundWork(Intent intent) {
-        System.out.println("Deeplin triggered");
+        System.out.println("Deeplink triggered");
         // Your background task logic, e.g., API calls, data processing, etc.
         if (intent != null && intent.hasExtra("base64Data")) {
             String base64Data = intent.getStringExtra("base64Data");
@@ -85,7 +85,7 @@ public class DeepLinkService extends Service {
             // Decode and save the data as a PDF
             boolean success = convertBase64ToPdf(base64Data);
 
-            System.out.println("Is Success convert PDF: " + success);
+            System.out.println("Is Success convert Image: " + success);
             // Optionally, notify the user or perform other actions
             if (success) {
                 showToast("PDF created successfully!");
@@ -117,7 +117,7 @@ public class DeepLinkService extends Service {
 
             // Define output file path
             File pdfFile = new File(Environment.getExternalStoragePublicDirectory(
-                    Environment.DIRECTORY_DOWNLOADS), guid.toString() + ".pdf");
+                    Environment.DIRECTORY_DOWNLOADS), guid.toString() + ".png");
 
             // Write the byte array to a file
             FileOutputStream fos = new FileOutputStream(pdfFile);
