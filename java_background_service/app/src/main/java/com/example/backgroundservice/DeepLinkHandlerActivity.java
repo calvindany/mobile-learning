@@ -19,9 +19,10 @@ public class DeepLinkHandlerActivity extends AppCompatActivity {
             String base64Data = data.getQueryParameter("data"); // Extract 'data' parameter
             System.out.println(base64Data);
             if (base64Data != null) {
+                System.out.println("Base 64 from first" + base64Data);
                 // Start a service to handle conversion logic
                 Intent serviceIntent = new Intent(this, DeepLinkService.class);
-                serviceIntent.putExtra("base64Data", base64Data); // Pass Base64 string to service
+                serviceIntent.putExtra("base64Data", Uri.decode(base64Data)); // Pass Base64 string to service
                 startService(serviceIntent);
             }
         }

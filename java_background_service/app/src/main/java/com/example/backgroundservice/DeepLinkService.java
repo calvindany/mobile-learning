@@ -18,7 +18,10 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.UUID;
 
 public class DeepLinkService extends Service {
 
@@ -77,9 +80,11 @@ public class DeepLinkService extends Service {
         // Your background task logic, e.g., API calls, data processing, etc.
         if (intent != null && intent.hasExtra("base64Data")) {
             String base64Data = intent.getStringExtra("base64Data");
+            System.out.println(base64Data);
 
             // Decode and save the data as a PDF
             boolean success = convertBase64ToPdf(base64Data);
+
             System.out.println("Is Success convert PDF: " + success);
             // Optionally, notify the user or perform other actions
             if (success) {
@@ -92,14 +97,27 @@ public class DeepLinkService extends Service {
         stopSelf();
     }
 
+    public static boolean doesFileExist(String filename) {
+        // Get the path to the Downloads directory
+        File downloadDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+
+        // Create a File object for the target file
+        File file = new File(downloadDirectory, filename); // Replace "filename" with the actual file name
+
+        // Check if the file exists
+        return file.exists();
+    }
+
     private boolean convertBase64ToPdf(String base64Data) {
         try {
+            UUID guid = UUID.randomUUID();
+
             // Decode Base64 to byte array
             byte[] pdfData = Base64.decode(base64Data, Base64.DEFAULT);
 
             // Define output file path
             File pdfFile = new File(Environment.getExternalStoragePublicDirectory(
-                    Environment.DIRECTORY_DOWNLOADS), "output.pdf");
+                    Environment.DIRECTORY_DOWNLOADS), guid.toString() + ".pdf");
 
             // Write the byte array to a file
             FileOutputStream fos = new FileOutputStream(pdfFile);
@@ -115,9 +133,6 @@ public class DeepLinkService extends Service {
 
     private void showToast(String message) {
         // Display a toast (optional)
-//        new android.os.Handler(getMainLooper()).post(() ->
-//                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-//        );
         Notification notification = new NotificationCompat.Builder(this, "channel_id")
                 .setContentTitle("DeepLink Service")
                 .setContentText(message)
