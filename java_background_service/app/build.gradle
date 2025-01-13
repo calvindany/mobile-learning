@@ -29,7 +29,7 @@ android {
 }
 
 dependencies {
-
+    implementation libs.escpos.thermalprinter.android
     implementation libs.appcompat
     implementation libs.material
     testImplementation libs.junit

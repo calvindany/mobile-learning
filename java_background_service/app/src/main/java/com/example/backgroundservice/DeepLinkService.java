@@ -6,10 +6,13 @@ import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
 import android.util.Base64;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -17,7 +20,16 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import com.dantsu.escposprinter.EscPosPrinter;
+import com.dantsu.escposprinter.connection.bluetooth.BluetoothPrintersConnections;
+import com.dantsu.escposprinter.exceptions.EscPosBarcodeException;
+import com.dantsu.escposprinter.exceptions.EscPosConnectionException;
+import com.dantsu.escposprinter.exceptions.EscPosEncodingException;
+import com.dantsu.escposprinter.exceptions.EscPosParserException;
+import com.dantsu.escposprinter.textparser.PrinterTextParserImg;
+
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -83,8 +95,14 @@ public class DeepLinkService extends Service {
             System.out.println(base64Data);
 
             // Decode and save the data as a PDF
-            boolean success = convertBase64ToPdf(base64Data);
-
+            String result = convertBase64ToPng(base64Data);
+//            boolean success = true;
+            boolean success;
+            if(!result.isEmpty()) {
+                success = printPng(result);
+            } else {
+                success = false;
+            }
             System.out.println("Is Success convert Image: " + success);
             // Optionally, notify the user or perform other actions
             if (success) {
@@ -108,7 +126,39 @@ public class DeepLinkService extends Service {
         return file.exists();
     }
 
-    private boolean convertBase64ToPdf(String base64Data) {
+    private boolean printPng(String filePath) {
+        File file = new File(filePath);
+
+        // Check if the file exists
+        if (file.exists()) {
+            try {
+                // Create a FileInputStream from the file
+                FileInputStream fileInputStream = new FileInputStream(file);
+
+                // Decode the file into a Bitmap
+                Bitmap bitmap = BitmapFactory.decodeStream(fileInputStream);
+
+                // Close the FileInputStream
+                fileInputStream.close();
+
+                EscPosPrinter printer = new EscPosPrinter(BluetoothPrintersConnections.selectFirstPaired(), 400, 48f, 32);
+                printer.printFormattedText(
+                        "[L]<img>" + PrinterTextParserImg.bitmapToHexadecimalString(printer, bitmap)+"</img>\n"
+                );
+
+                return true;
+            } catch (IOException | EscPosConnectionException | EscPosParserException |
+                     EscPosEncodingException | EscPosBarcodeException e) {
+                e.printStackTrace();
+                return false;
+            }
+        } else {
+            // File doesn't exist
+            System.out.println("File not found");
+            return false;
+        }
+    }
+    private String convertBase64ToPng(String base64Data) {
         try {
             UUID guid = UUID.randomUUID();
 
@@ -118,16 +168,17 @@ public class DeepLinkService extends Service {
             // Define output file path
             File pdfFile = new File(Environment.getExternalStoragePublicDirectory(
                     Environment.DIRECTORY_DOWNLOADS), guid.toString() + ".png");
-
+            String path  = pdfFile.getAbsolutePath();
+            System.out.println(path);
             // Write the byte array to a file
             FileOutputStream fos = new FileOutputStream(pdfFile);
             fos.write(pdfData);
             fos.close();
 
-            return true; // Indicate success
+            return path; // Indicate success
         } catch (Exception e) {
             e.printStackTrace();
-            return false; // Indicate failure
+            return ""; // Indicate failure
         }
     }
 
